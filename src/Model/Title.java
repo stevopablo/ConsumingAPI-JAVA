@@ -3,9 +3,7 @@ package Model;
 import com.google.gson.annotations.SerializedName;
 
 public class Title {
-    @SerializedName("Title")
     private String title;
-    @SerializedName("Year")
     private String year;
     private String runTime;
 

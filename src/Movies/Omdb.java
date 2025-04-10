@@ -1,5 +1,11 @@
 package Movies;
 
+import Model.Title;
+import Model.TitleOmdb;
+import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -20,6 +26,20 @@ public class Omdb {
                             .uri(URI.create(URL))
                             .build();
         HttpResponse response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println("response = " + response.body());
+//        System.out.println("response = " + response.body());
+
+        String json = (String) response.body();
+        System.out.println(json);
+
+        Gson gson = new GsonBuilder()
+                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
+//        Title myMovie = gson.fromJson(json,Title.class);
+//        System.out.println(myMovie);
+
+        TitleOmdb titleOmdb = gson.fromJson(json, TitleOmdb.class);
+        System.out.println("titleOmdb = " + titleOmdb);
+
+        Title myTitle = new Title(titleOmdb);
+
     }
 }

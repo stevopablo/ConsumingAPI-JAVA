@@ -12,47 +12,59 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.security.PrivilegedActionException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
-import java.util.SequencedCollection;
 
 public class Omdb {
-    public static void main(String[] args) throws IOException, InterruptedException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter ur favorite movie: ");
-        try {
-        String movie = scanner.nextLine();
-        final String URL = "http://www.omdbapi.com/?t=" + movie.replace(" ", "+") + "&apikey=6a5c2ac3";
+    public static void main(String[] args) {
+        try (Scanner scanner = new Scanner(System.in)) {
+            Gson gson = new GsonBuilder()
+                    .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE)
+                    .setPrettyPrinting()
+                    .create();
 
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                            .uri(URI.create(URL))
+            List<Title> movies = new ArrayList<>();
+            boolean running = true;
+
+            while (running) {
+                System.out.println("Enter your favorite movie (or type 'exit' to quit): ");
+                String movie = scanner.nextLine();
+
+                if (movie.equalsIgnoreCase("exit")) {
+                    running = false;
+                    continue;
+                }
+
+                try {
+                    String url = "http://www.omdbapi.com/?t=" + movie.replace(" ", "+") + "&apikey=6a5c2ac3";
+                    HttpClient client = HttpClient.newHttpClient();
+                    HttpRequest request = HttpRequest.newBuilder()
+                            .uri(URI.create(url))
                             .build();
-        HttpResponse response = client.send(request, HttpResponse.BodyHandlers.ofString());
-//        System.out.println("response = " + response.body());
 
-        String json = (String) response.body();
-        System.out.println(json);
+                    HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                    String json = response.body();
+                    System.out.println("API Response:\n" + json);
 
-        Gson gson = new GsonBuilder()
-                .setFieldNamingPolicy(FieldNamingPolicy.UPPER_CAMEL_CASE).create();
-//        Title myMovie = gson.fromJson(json,Title.class);
-//        System.out.println(myMovie);
-            TitleOmdb titleOmdb = gson.fromJson(json, TitleOmdb.class);
-            Title myTitle = new Title(titleOmdb);
+                    TitleOmdb titleOmdb = gson.fromJson(json, TitleOmdb.class);
+                    Title myTitle = new Title(titleOmdb);
+                    movies.add(myTitle);
 
-            FileWriter fileWriter = new FileWriter("TopMovies.txt");
-            fileWriter.write(titleOmdb.toString());
-            fileWriter.close();
+                } catch (IOException | InterruptedException e) {
+                    System.out.println("Error fetching movie data: " + e.getMessage());
+                }
+            }
 
-            System.out.println("titleOmdb = " + titleOmdb);
-        }catch (Exception e){
-            System.out.println("theres an error");
-            System.out.println("e = " + e);
-        }finally {
-            System.out.println("see ya space cowboy");
+            try (FileWriter fileWriter = new FileWriter("TopMovies.json")) {
+                fileWriter.write(gson.toJson(movies));
+                fileWriter.close();
+                System.out.println("Movies saved successfully!");
+            } catch (IOException e) {
+                System.out.println("Error writing to file: " + e.getMessage());
+            }
         }
 
-
+        System.out.println("See ya, space cowboy!");
     }
 }
